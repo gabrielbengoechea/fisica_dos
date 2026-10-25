@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100 dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Física II para Ingeniería en Logística | Plataforma Autónoma</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0b0f19',
+            surface: {
+              DEFAULT: '#141c2e',
+              border: '#1e293b',
+              hover: '#28354d'
+            },
+            accent: {
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <!-- Three.js y OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- React 18 y ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone para JSX en navegador -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* Estilos globales y personalización de scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    canvas {
+      outline: none;
+      touch-action: none;
+    }
+    .katex-display {
+      margin: 0.5em 0 !important;
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased bg-obsidian text-slate-200 overflow-hidden select-none">
+  <div id="root" class="h-full w-full"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- COMPONENTE AUXILIAR MATEMÁTICO (KaTeX) ---
+    const MathBlock = ({ math, inline = false }) => {
+      const containerRef = useRef(null);
+      useEffect(() => {
+        if (containerRef.current && window.katex) {
+          try {
+            window.katex.render(math, containerRef.current, {
+              displayMode: !inline,
+              throwOnError: false
+            });
+          } catch (e) {
+            containerRef.current.innerText = math;
+          }
+        }
+      }, [math, inline]);
+      return <span ref={containerRef} className={inline ? "inline-block font-mono" : "block my-2 text-center overflow-x-auto py-1"} />;
+    };
+
+    // --- BASE DE DATOS DE CONTENIDOS Y PLAN DE ESTUDIOS (Syllabus Oficial) ---
+    const COURSE_DATA = [
+      {
+        id: 'termodinamica',
+        title: 'Unidad 1: Termodinámica',
+        description: 'Estudio de la energía térmica, cinética molecular y transferencias de calor en cadena de frío y sistemas de transporte.',
+        chapters: [
+          {
+            id: 'cap1_temp_calor',
+            title: 'Cap. 1: Temperatura y Calor',
+            syllabusRef: 'Volumen II - Unidad 1: Cap 1',
+            theory: `
+              La temperatura mide la energía cinética promedio de las moléculas de un cuerpo. En logística industrial, el control térmico de contenedores refrigerados (reefer) previene la degradación de carga perecedera.
+              El flujo de calor por conducción viene dado por la Ley de Fourier: $Q/t = k A (T_2 - T_1) / L$.
+            `,
+            logisticsBridge: {
+              title: 'Monitoreo de Cadena de Frío en Almacenes y Reefers',
+              problem: 'Se requiere calcular la pérdida de calor en una pared aislante de poliuretano expandido en un contenedor marítimo de 40 pies.',
+              formula: 'P = \\frac{Q}{\\Delta t} = \\frac{k \\cdot A \\cdot (T_{ext} - T_{int})}{d}',
+              solution: 'Incrementar el espesor $d$ o reducir la conductividad $k$ minimiza la carga térmica del equipo de refrigeración, optimizando el consumo de combustible diésel.',
+              kpi: 'Variación Térmica Máxima Permitida: ±0.5°C'
+            },
+            quiz: [
+              {
+                id: 'q1',
+                question: 'Un contenedor reefer opera a -18°C mientras la temperatura exterior es de 32°C. Si el espesor del aislante se duplica, ¿cómo varía la tasa de transferencia de calor?',
+                options: [
+                  'Se duplica',
+                  'Se reduce a la mitad',
+                  'Permanece constante',
+                  'Se cuadruplica'
+                ],
+                correct: 1,
+                explanation: 'La Ley de Fourier establece que la tasa de transferencia de calor por conducción $P$ es inversamente proporcional al espesor del aislante $d$ ($P \\propto 1/d$). Al duplicar el espesor, la tasa de transferencia se reduce a la mitad.'
+              }
+            ],
+            simType: 'thermo'
+          },
+          {
+            id: 'cap2_teoria_cinetica',
+            title: 'Cap. 2: Teoría Cinética de los Gases',
+            syllabusRef: 'Volumen II - Unidad 1: Cap 2',
+            theory: `
+              La teoría cinética conecta el comportamiento microscópico de las moléculas de un gas con sus propiedades macroscópicas (Presión y Temperatura).
+              La ecuación de estado del gas ideal es $P V = n R T$. La velocidad cuadrática media molecular es $v_{rms} = \\sqrt{\\frac{3 R T}{M}}$.
+            `,
+            logisticsBridge: {
+              title: 'Transporte Marítimo de Gas Natural Licuado (GNL)',
+              problem: 'Mantenimiento de la presión segura en tanques criogénicos esféricos durante travesías transoceánicas.',
+              formula: 'P = \\frac{N k_B T}{V}',
+              solution: 'El monitoreo en tiempo real de la temperatura $T$ permite proyectar la acumulación de vaporización de gas (Boil-Off Gas) e integrar el vapor excedente como combustible en la propulsante del buque.',
+              kpi: 'Presión Máxima Operativa en Tanque: 4.5 bar'
+            },
+            quiz: [
+              {
+                id: 'q2',
+                question: 'Si la temperatura absoluta de un gas ideal contenido en un tanque hermético rígido se triplica, ¿qué sucede con la presión en el interior?',
+                options: [
+                  'Disminuye a un tercio',
+                  'Se duplica',
+                  'Se triplica',
+                  'Aumenta 9 veces'
+                ],
+                correct: 2,
+                explanation: 'En un proceso isocórico (Volumen constante), según Gay-Lussac y $PV = nRT$, la presión $P$ es directamente proporcional a la temperatura absoluta $T$. Si $T$ se triplica, $P$ también se triplica.'
+              }
+            ],
+            simType: 'thermo'
+          },
+          {
+            id: 'cap3_4_leyes_termo',
+            title: 'Cap. 3 y 4: 1ª y 2ª Ley de la Termodinámica',
+            syllabusRef: 'Volumen II - Unidad 1: Cap 3 y 4',
+            theory: `
+              La 1ª Ley establece la conservación de energía: $\\Delta U = Q - W$. La 2ª Ley introduce el concepto de Entropía ($S$) y limita la eficiencia térmica máxima de los motores diésel de flotas mediante el ciclo de Carnot: $\\eta_{max} = 1 - T_C / T_H$.
+            `,
+            logisticsBridge: {
+              title: 'Eficiencia Energética en Flotas Pesadas Diésel',
+              problem: 'Optimización del consumo de combustible en camiones de carga de larga distancia.',
+              formula: '\\eta = 1 - \\frac{Q_C}{Q_H}',
+              solution: 'Reducir las pérdidas irreversibles de fricción y disipación de calor mediante mantenimiento preventivo incrementa el rendimiento volumétrico de la flota.',
+              kpi: 'Eficiencia Térmica Objetivo: > 42%'
+            },
+            quiz: [
+              {
+                id: 'q3',
+                question: '¿Por qué ninguna máquina térmica logarítmica o motor comercial puede alcanzar un 100% de eficiencia térmica?',
+                options: [
+                  'Por fallas mecánicas de lubricación',
+                  'Porque violaría la Segunda Ley de la Termodinámica al no rechazar calor a un foco frío',
+                  'Por mala calidad del diésel industrial',
+                  'Porque la energía no se conserva en procesos cíclicos'
+                ],
+                correct: 1,
+                explanation: 'El enunciado de Kelvin-Planck de la Segunda Ley de la Termodinámica indica que es imposible construir una máquina térmica que opere en un ciclo y no entregue energía térmica a un depósito de menor temperatura.'
+              }
+            ],
+            simType: 'thermo'
+          }
+        ]
+      },
+      {
+        id: 'electromagnetismo',
+        title: 'Unidad 2: Electricidad y Magnetismo',
+        description: 'Campos eléctricos, inducción electromagnética, sensores RFID y sistemas de potencia para centros de distribución automatizados.',
+        chapters: [
+          {
+            id: 'cap5_7_campo_electrico',
+            title: 'Cap. 5-7: Cargas, Campos y Potencial Eléctrico',
+            syllabusRef: 'Volumen II - Unidad 2: Cap 5, 6, 7',
+            theory: `
+              La Ley de Coulomb determina la fuerza entre cargas: $F = k \\frac{|q_1 q_2|}{r^2}$. La Ley de Gauss relaciona el flujo eléctrico con la carga encerrada: $\\Phi_E = \\oint \\vec{E} \\cdot d\\vec{A} = \\frac{Q_{enc}}{\\varepsilon_0}$.
+              El control de descargas electrostáticas (ESD) es indispensable para evitar daños en la logística de microcomponentes.
+            `,
+            logisticsBridge: {
+              title: 'Protección ESD en Almacenamiento Electrónico',
+              problem: 'Prevención de chispas estáticas durante el empaque automatizado de placas de circuito impreso.',
+              formula: 'E = \\frac{1}{4\\pi \\varepsilon_0} \\frac{Q}{r^2}',
+              solution: 'Instalación de suelos conductivos y pulseras de puesta a tierra para drenar cargas $Q$ antes de alcanzar el potencial crítico de ruptura del aire ($3 \\times 10^6 \\text{ V/m}$).',
+              kpi: 'Potencial Electrostático Máximo Seguro: < 100 V'
+            },
+            quiz: [
+              {
+                id: 'q4',
+                question: 'Si la distancia entre dos cargas puntuales se reduce a la mitad, ¿cómo cambia la magnitud de la fuerza electrostática entre ellas?',
+                options: [
+                  'Se reduce a la mitad',
+                  'Se duplica',
+                  'Aumenta por un factor de 4',
+                  'Permanece constante'
+                ],
+                correct: 2,
+                explanation: 'Según la Ley de Coulomb, la fuerza es inversamente proporcional al cuadrado de la distancia ($F \\propto 1/r^2$). Si la distancia es $r/2$, la fuerza se multiplica por $1/(1/2)^2 = 4$.'
+              }
+            ],
+            simType: 'em'
+          },
+          {
+            id: 'cap8_10_circuitos_baterias',
+            title: 'Cap. 8-10: Capacidad, Corriente y Circuitos CC',
+            syllabusRef: 'Volumen II - Unidad 2: Cap 8, 9, 10',
+            theory: `
+              Un capacitor almacena energía en un campo eléctrico: $U = \\frac{1}{2} C V^2$.
+              La Ley de Ohm ($V = I R$) y las Leyes de Kirchhoff rigen los sistemas de recarga rápida de baterías de Litio-Ion para Vehículos de Guiado Autónomo (AGV).
+            `,
+            logisticsBridge: {
+              title: 'Dimensamiento Energético de Baterías para Flotas AGV',
+              problem: 'Determinación del tiempo de recarga y capacidad en Amperios-hora ($Ah$) para mantener operaciones 24/7.',
+              formula: 'P = I \\cdot V = I^2 R',
+              solution: 'Aumentar el voltaje nominal del bus CC reduce la corriente requerida $I$, disminuyendo la disipación por efecto Joule en los cables de carga rápida.',
+              kpi: 'Eficiencia de Recarga de AGV: > 92%'
+            },
+            quiz: [
+              {
+                id: 'q5',
+                question: 'Dos resistores de $10\\,\\Omega$ se conectan en paralelo a una fuente de corriente continua de $20\\text{ V}$. ¿Cuál es la corriente total suministrada por la fuente?',
+                options: [
+                  '1 A',
+                  '2 A',
+                  '4 A',
+                  '0.5 A'
+                ],
+                correct: 2,
+                explanation: 'La resistencia equivalente en paralelo es $R_{eq} = 10 / 2 = 5\\,\\Omega$. La corriente total es $I = V / R_{eq} = 20\\text{ V} / 5\\,\\Omega = 4\\text{ A}$.'
+              }
+            ],
+            simType: 'em'
+          },
+          {
+            id: 'cap11_14_rfid_induccion',
+            title: 'Cap. 11-14: Magnetismo e Inducción Electromagnética',
+            syllabusRef: 'Volumen II - Unidad 2: Cap 11, 12, 13, 14',
+            theory: `
+              La Ley de Faraday-Lenz indica que un flujo magnético variable induce una fuerza electromotriz (FEM): $\\mathcal{E} = - \\frac{d\\Phi_B}{dt}$.
+              Este principio físico impulsa las antenas de lectura RFID pasivas e identificación de contenedores a alta velocidad en portales de depósitos.
+            `,
+            logisticsBridge: {
+              title: 'Trazabilidad Automatizada de Pallets mediante Portales RFID',
+              problem: 'Lectura inalámbrica simultánea de 200 etiquetas pasivas por segundo en un paso de montacargas.',
+              formula: '\\mathcal{E} = -N \\frac{\\Delta (B \\cdot A \\cdot \\cos\\theta)}{\\Delta t}',
+              solution: 'Optimizar la frecuencia y la potencia del campo magnético variable $B(t)$ generado por la antena marco induce el voltaje necesario en el microchip de la etiqueta RFID.',
+              kpi: 'Tasa de Lectura Efectiva: 99.98%'
+            },
+            quiz: [
+              {
+                id: 'q6',
+                question: 'De acuerdo con la Ley de Lenz, la dirección de la corriente inducida en un circuito cerrado cumple la función de:',
+                options: [
+                  'Aumentar siempre la magnitud del campo magnético externo',
+                   me 'Oponerse al cambio en el flujo magnético que la produce',
+                  'Generar calor de disipación inmediato',
+                  'Anular el potencial electrostático de la fuente'
+                ],
+                correct: 1,
+                explanation: 'La Ley de Lenz establece que el sentido de la FEM e intensidad inducidas es tal que se opone siempre a la variación del flujo magnético que las origina (signo negativo en la ley de Faraday).'
+              }
+            ],
+            simType: 'em'
+          }
+        ]
+      },
+      {
+        id: 'ondas_acustica',
+        title: 'Unidad 3: Ondas y Acústica',
+        description: 'Oscilaciones, ensayos no destructivos por ultrasonido y telemetría de nivel en silos de granos y contenedores.',
+        chapters: [
+          {
+            id: 'cap15_17_ondas_ultrasonido',
+            title: 'Cap. 15-17: Oscilaciones, Ondas y Sonido',
+            syllabusRef: 'Unidad 2 - Vol I: Cap 15, 16, 17',
+            theory: `
+              Las ondas mecánicas transportan energía sin transporte de materia. La velocidad de propagación acústica es $v = f \\lambda$.
+              En fluidos, la velocidad depende del módulo de compresibilidad $B$ y la densidad $\\rho$: $v = \\sqrt{B/\\rho}$.
+              Los sensores ultrasónicos utilizan el eco del sonido para medir distancia y volumen de mercancía almacenada.
+            `,
+            logisticsBridge: {
+              title: 'Sensores Ultrasónicos de Inventario y Nivel en Silos',
+              problem: 'Monitoreo continuo de stock de granos o líquidos en silos sin contacto físico directo.',
+              formula: 'd = \\frac{v_{sonido} \\cdot t_{vuelo}}{2}',
+              solution: 'Un emisor ultrasónico emite un pulso que rebota en la superficie. El tiempo transcurrido $t_{vuelo}$ se procesa para calcular el nivel remanente de mercancía.',
+              kpi: 'Precisión de Medición de Nivel: ±2 mm'
+            },
+            quiz: [
+              {
+                id: 'q7',
+                question: 'Un sensor ultrasónico de nivel recibe un eco a los 0.01 segundos de haber emitido la señal. Si la velocidad del sonido en el aire es 340 m/s, ¿a qué distancia se encuentra la superficie de la carga?',
+                options: [
+                  '3.4 metros',
+                  '1.7 metros',
+                  '6.8 metros',
+                  '0.85 metros'
+                ],
+                correct: 1,
+                explanation: 'El sonido recorre el camino de ida y vuelta. La distancia total es $d_{total} = v \\cdot t = 340 \\times 0.01 = 3.4\\text{ m}$. Por lo tanto, la distancia a la carga es la mitad: $d = 3.4 / 2 = 1.7\\text{ metros}$.'
+              }
+            ],
+            simType: 'waves'
+          }
+        ]
+      }
+    ];
+
+    const CONSTANTS_DATA = [
+      { name: 'Velocidad de la luz en el vacío', symbol: 'c', value: '2.998 \\times 10^8', unit: 'm/s' },
+      { name: 'Carga elemental', symbol: 'e', value: '1.602 \\times 10^{-19}', unit: 'C' },
+      { name: 'Permitividad del vacío', symbol: '\\varepsilon_0', value: '8.854 \\times 10^{-12}', unit: 'F/m' },
+      { name: 'Permeabilidad del vacío', symbol: '\\mu_0', value: '4\\pi \\times 10^{-7}', unit: 'H/m' },
+      { name: 'Constante universal de los gases', symbol: 'R', value: '8.314', unit: 'J/(mol\\cdot K)' },
+      { name: 'Constante de Boltzmann', symbol: 'k_B', value: '1.381 \\times 10^{-23}', unit: 'J/K' },
+      { name: 'Velocidad del sonido en aire (20°C)', symbol: 'v_s', value: '343', unit: 'm/s' }
+    ];
+
+    // --- SIMULADOR 3D 1: TERMODINÁMICA Y TEORÍA CINÉTICA ---
+    const ThermoSimulation = ({ temp, particlesCount }) => {
+      const mountRef = useRef(null);
+
+      useEffect(() => {
+        const container = mountRef.current;
+        if (!container) return;
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
+
+        const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+        camera.position.set(0, 8, 16);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Contenedor Industrial Transparente (Reefer / Tanque)
+        const boxGeo = new THREE.BoxGeometry(8, 8, 8);
+        const boxMat = new THREE.MeshBasicMaterial({
+          color: 0x06b6d4,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.3
+        });
+        const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+        scene.add(boxMesh);
+
+        // Iluminación
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040, 2));
+
+        // Partículas de Gas Ideal
+        const count = particlesCount;
+        const pGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const pMaterial = new THREE.MeshStandardMaterial({
+          color: 0xf59e0b,
+          roughness: 0.3
+        });
+
+        const instancedMesh = new THREE.InstancedMesh(pGeometry, pMaterial, count);
+        const dummy = new THREE.Object3D();
+
+        const pos = [];
+        const vel = [];
+        const bounds = 3.8;
+
+        for (let i = 0; i < count; i++) {
+          const px = (Math.random() - 0.5) * (bounds * 2);
+          const py = (Math.random() - 0.5) * (bounds * 2);
+          const pz = (Math.random() - 0.5) * (bounds * 2);
+          pos.push(new THREE.Vector3(px, py, pz));
+
+          const speedMultiplier = Math.sqrt(temp / 300) * 0.08;
+          vel.push(new THREE.Vector3(
+            (Math.random() - 0.5) * speedMultiplier,
+            (Math.random() - 0.5) * speedMultiplier,
+            (Math.random() - 0.5) * speedMultiplier
+          ));
+        }
+
+        scene.add(instancedMesh);
+
+        let animationFrameId;
+        const animate = () => {
+          animationFrameId = requestAnimationFrame(animate);
+
+          const currentSpeedMult = Math.sqrt(temp / 300) * 0.08;
+
+          for (let i = 0; i < count; i++) {
+            let p = pos[i];
+            let v = vel[i];
+
+            // Normalizar velocidad según temperatura ajustada
+            v.normalize().multiplyScalar(currentSpeedMult);
+
+            p.add(v);
+
+            // Rebotar en paredes
+            if (Math.abs(p.x) > bounds) { v.x *= -1; p.x = Math.sign(p.x) * bounds; }
+            if (Math.abs(p.y) > bounds) { v.y *= -1; p.y = Math.sign(p.y) * bounds; }
+            if (Math.abs(p.z) > bounds) { v.z *= -1; p.z = Math.sign(p.z) * bounds; }
+
+            dummy.position.copy(p);
+            dummy.updateMatrix();
+            instancedMesh.setMatrixAt(i, dummy.matrix);
+          }
+          instancedMesh.instanceMatrix.needsUpdate = true;
+
+          controls.update();
+          renderer.render(scene, camera);
+        };
+
+        animate();
+
+        const handleResize = () => {
+          if (!container) return;
+          const w = container.clientWidth;
+          const h = container.clientHeight;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+          cancelAnimationFrame(animationFrameId);
+          window.removeEventListener('resize', handleResize);
+          controls.dispose();
+          renderer.dispose();
+          if (container.contains(renderer.domElement)) {
+            container.removeChild(renderer.domElement);
+          }
+        };
+      }, [temp, particlesCount]);
+
+      return <div ref={mountRef} className="w-full h-full min-h-[350px] rounded-lg overflow-hidden relative" />;
+    };
+
+    // --- SIMULADOR 3D 2: ELECTROMAGNETISMO Y PORTAL RFID ---
+    const EMSimulation = ({ charge, distance }) => {
+      const mountRef = useRef(null);
+
+      useEffect(() => {
+        const container = mountRef.current;
+        if (!container) return;
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
+
+        const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+        camera.position.set(0, 6, 14);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Portal Antena RFID
+        const frameGeo = new THREE.BoxGeometry(8, 6, 0.4);
+        const frameMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 });
+        const frame = new THREE.Mesh(frameGeo, frameMat);
+        scene.add(frame);
+
+        // Núcleo Emisor
+        const coreGeo = new THREE.CylinderGeometry(0.6, 0.6, 5, 16);
+        const coreMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        core.rotation.z = Math.PI / 2;
+        scene.add(core);
+
+        // Pallet / Carga con Etiqueta RFID
+        const palletGeo = new THREE.BoxGeometry(2, 2, 2);
+        const palletMat = new THREE.MeshStandardMaterial({ color: 0x10b981 });
+        const pallet = new THREE.Mesh(palletGeo, palletMat);
+        pallet.position.set(0, -1, distance);
+        scene.add(pallet);
+
+        // Líneas de Campo Magnético / Electromagnético Representativas
+        const ringGroup = new THREE.Group();
+        const ringsCount = 6;
+        for (let i = 1; i <= ringsCount; i++) {
+          const r = i * 0.9 * (charge / 5);
+          const ringGeo = new THREE.TorusGeometry(r, 0.03, 16, 100);
+          const ringMat = new THREE.MeshBasicMaterial({
+            color: 0x06b6d4,
+            transparent: true,
+            opacity: Math.max(0.1, 1 - r / 7)
+          });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ringGroup.add(ring);
+        }
+        scene.add(ringGroup);
+
+        // Luz
+        const pLight = new THREE.PointLight(0xffffff, 1.2);
+        pLight.position.set(5, 8, 5);
+        scene.add(pLight);
+        scene.add(new THREE.AmbientLight(0x333333));
+
+        let animationFrameId;
+        const animate = () => {
+          animationFrameId = requestAnimationFrame(animate);
+
+          pallet.position.z = distance;
+          ringGroup.rotation.z += 0.01;
+
+          // Animación de pulso en las líneas de campo
+          const scalePulse = 1 + Math.sin(Date.now() * 0.005) * 0.05;
+          ringGroup.scale.set(scalePulse, scalePulse, scalePulse);
+
+          controls.update();
+          renderer.render(scene, camera);
+        };
+
+        animate();
+
+        const handleResize = () => {
+          if (!container) return;
+          const w = container.clientWidth;
+          const h = container.clientHeight;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+          cancelAnimationFrame(animationFrameId);
+          window.removeEventListener('resize', handleResize);
+          controls.dispose();
+          renderer.dispose();
+          if (container.contains(renderer.domElement)) {
+            container.removeChild(renderer.domElement);
+          }
+        };
+      }, [charge, distance]);
+
+      return <div ref={mountRef} className="w-full h-full min-h-[350px] rounded-lg overflow-hidden relative" />;
+    };
+
+    // --- SIMULADOR 3D 3: ONDAS ULTRASÓNICAS Y NIVEL DE TANQUE ---
+    const WavesSimulation = ({ freq, liquidLevel }) => {
+      const mountRef = useRef(null);
+
+      useEffect(() => {
+        const container = mountRef.current;
+        if (!container) return;
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
+
+        const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+        camera.position.set(0, 5, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Silo / Tanque Cilindrico
+        const tankGeo = new THREE.CylinderGeometry(3, 3, 8, 32, 1, true);
+        const tankMat = new THREE.MeshStandardMaterial({
+          color: 0x475569,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.4
+        });
+        const tank = new THREE.Mesh(tankGeo, tankMat);
+        scene.add(tank);
+
+        // Nivel de Líquido Almacenado
+        const liquidGeo = new THREE.CylinderGeometry(2.9, 2.9, liquidLevel, 32);
+        const liquidMat = new THREE.MeshStandardMaterial({
+          color: 0x06b6d4,
+          transparent: true,
+          opacity: 0.75,
+          roughness: 0.1
+        });
+        const liquid = new THREE.Mesh(liquidGeo, liquidMat);
+        liquid.position.y = -4 + liquidLevel / 2;
+        scene.add(liquid);
+
+        // Sensor Ultrasónico en la parte superior
+        const sensorGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 16);
+        const sensorMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b });
+        const sensor = new THREE.Mesh(sensorGeo, sensorMat);
+        sensor.position.set(0, 4.3, 0);
+        scene.add(sensor);
+
+        // Anillos representativos de la Onda Ultrasónica
+        const waveRings = [];
+        const ringCount = 5;
+        for (let i = 0; i < ringCount; i++) {
+          const wGeo = new THREE.RingGeometry(0.1, 0.25, 32);
+          const wMat = new THREE.MeshBasicMaterial({
+            color: 0x10b981,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+          });
+          const ring = new THREE.Mesh(wGeo, wMat);
+          ring.rotation.x = Math.PI / 2;
+          ring.position.y = 4.0;
+          scene.add(ring);
+          waveRings.push(ring);
+        }
+
+        // Luz
+        const pLight = new THREE.PointLight(0xffffff, 1.2);
+        pLight.position.set(6, 8, 6);
+        scene.add(pLight);
+        scene.add(new THREE.AmbientLight(0x333333, 2));
+
+        let animationFrameId;
+        let progress = 0;
+
+        const animate = () => {
+          animationFrameId = requestAnimationFrame(animate);
+
+          progress += 0.03 * (freq / 20);
+          if (progress > 1) progress = 0;
+
+          const topY = 4.0;
+          const liquidSurfaceY = -4 + liquidLevel;
+
+          waveRings.forEach((ring, idx) => {
+            const offset = (progress + idx / ringCount) % 1;
+            const currentY = topY - offset * (topY - liquidSurfaceY);
+            ring.position.y = currentY;
+            const scale = 0.2 + offset * 2.5;
+            ring.scale.set(scale, scale, scale);
+            ring.material.opacity = 1 - offset;
+          });
+
+          controls.update();
+          renderer.render(scene, camera);
+        };
+
+        animate();
+
+        const handleResize = () => {
+          if (!container) return;
+          const w = container.clientWidth;
+          const h = container.clientHeight;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+          cancelAnimationFrame(animationFrameId);
+          window.removeEventListener('resize', handleResize);
+          controls.dispose();
+          renderer.dispose();
+          if (container.contains(renderer.domElement)) {
+            container.removeChild(renderer.domElement);
+          }
+        };
+      }, [freq, liquidLevel]);
+
+      return <div ref={mountRef} className="w-full h-full min-h-[350px] rounded-lg overflow-hidden relative" />;
+    };
+
+    // --- COMPONENTE PRINCIPAL DE LA APLICACIÓN ---
+    function App() {
+      // Carga de estado inicial guardado en localStorage
+      const [progress, setProgress] = useState(() => {
+        const saved = localStorage.getItem('
